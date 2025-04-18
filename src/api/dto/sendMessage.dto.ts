@@ -126,21 +126,21 @@ export class SendLocationDto extends Metadata {
   address?: string;
 }
 
-class Row {
+export class ListRow {
   title: string;
   description: string;
   rowId: string;
 }
-class Section {
+export class ListSection {
   title: string;
-  rows: Row[];
+  rows: ListRow[];
 }
 export class SendListDto extends Metadata {
   title: string;
   description?: string;
   footerText?: string;
   buttonText: string;
-  sections: Section[];
+  sections: ListSection[];
 }
 
 export class ContactMessage {

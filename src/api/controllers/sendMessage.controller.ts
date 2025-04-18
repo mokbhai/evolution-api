@@ -1,5 +1,6 @@
 import { InstanceDto } from '@api/dto/instance.dto';
 import {
+  ListSection,
   SendAudioDto,
   SendButtonsDto,
   SendContactDto,
@@ -65,7 +66,27 @@ export class SendMessageController {
   }
 
   public async sendButtons({ instanceName }: InstanceDto, data: SendButtonsDto) {
-    return await this.waMonitor.waInstances[instanceName].buttonMessage(data);
+    if (data.buttons.length > 1) {
+      const sections: ListSection[] = [{
+          title: data.title,
+          rows: data.buttons.map(button => ({
+              title: button.displayText || ' ',
+              description: data.description || ' ',
+              rowId: button.id || 'rowId 001'
+          }))
+      }];
+      
+      const sendListData: SendListDto = {
+          ...data,
+          title: data.title,
+          description: data.description,
+          footerText: data.footer,
+          buttonText: "Choose an option", // You can customize this text
+          sections: sections
+      };
+
+      return this.waMonitor.waInstances[instanceName].listMessage(sendListData);
+  }    return await this.waMonitor.waInstances[instanceName].buttonMessage(data);
   }
 
   public async sendLocation({ instanceName }: InstanceDto, data: SendLocationDto) {
