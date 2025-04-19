@@ -13,6 +13,7 @@ import { rmSync } from 'fs';
 import { join } from 'path';
 
 import { CacheService } from './cache.service';
+import { ListSection, SendButtonsDto, SendListDto } from '@api/dto/sendMessage.dto';
 
 export class WAMonitoringService {
   constructor(
@@ -244,6 +245,28 @@ export class WAMonitoringService {
     } catch (error) {
       this.logger.error(error);
     }
+  }
+
+  public changeButtonMessageToList(buttonMessage: SendButtonsDto): SendListDto {
+    const sections: ListSection[] = [{
+        title: buttonMessage.title,
+        rows: buttonMessage.buttons.map(button => ({
+            title: button.displayText || ' ',
+            description: ' ',
+            rowId: button.id || 'rowId 001'
+        }))
+    }];
+      
+    const sendListData: SendListDto = {
+        ...buttonMessage,
+        title: buttonMessage.title,
+        description: buttonMessage.description,
+        footerText: buttonMessage.footer,
+        buttonText: "Choose an option", // You can customize this text
+        sections: sections
+    };
+
+    return sendListData;
   }
 
   private async setInstance(instanceData: InstanceDto) {

@@ -16,6 +16,7 @@ import {
   SendTextDto,
 } from '@api/dto/sendMessage.dto';
 import { WAMonitoringService } from '@api/services/monitor.service';
+import { Integration } from '@api/types/wa.types';
 import { BadRequestException } from '@exceptions';
 import { isBase64, isURL } from 'class-validator';
 
@@ -65,28 +66,12 @@ export class SendMessageController {
     }
   }
 
-  public async sendButtons({ instanceName }: InstanceDto, data: SendButtonsDto) {
-    if (data.buttons.length > 1) {
-      const sections: ListSection[] = [{
-          title: data.title,
-          rows: data.buttons.map(button => ({
-              title: button.displayText || ' ',
-              description: data.description || ' ',
-              rowId: button.id || 'rowId 001'
-          }))
-      }];
-      
-      const sendListData: SendListDto = {
-          ...data,
-          title: data.title,
-          description: data.description,
-          footerText: data.footer,
-          buttonText: "Choose an option", // You can customize this text
-          sections: sections
-      };
-
+  public async sendButtons({ instanceName, integration }: InstanceDto, data: SendButtonsDto) {
+    if (!integration || integration === Integration.WHATSAPP_BAILEYS) {
+      const sendListData: SendListDto = this.waMonitor.changeButtonMessageToList(data);
       return this.waMonitor.waInstances[instanceName].listMessage(sendListData);
-  }    return await this.waMonitor.waInstances[instanceName].buttonMessage(data);
+    }
+    return await this.waMonitor.waInstances[instanceName].buttonMessage(data);
   }
 
   public async sendLocation({ instanceName }: InstanceDto, data: SendLocationDto) {

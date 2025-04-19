@@ -1,5 +1,7 @@
 import { PrismaRepository } from '@api/repository/repository.service';
+import { waMonitor } from '@api/server.module';
 import { WAMonitoringService } from '@api/services/monitor.service';
+import { Integration } from '@api/types/wa.types';
 import { Auth, ConfigService, HttpServer, Typebot } from '@config/env.config';
 import { Logger } from '@config/logger.config';
 import { Instance, IntegrationSession, Message, Typebot as TypebotModel } from '@prisma/client';
@@ -115,6 +117,7 @@ export class TypebotService {
       clientSideActions,
       applyFormatting,
       this.prismaRepository,
+      instance.integration,
     ).catch((err) => {
       console.error('Erro ao processar mensagens:', err);
     });
@@ -207,6 +210,7 @@ export class TypebotService {
       clientSideActions: any,
       applyFormatting: any,
       prismaRepository: PrismaRepository,
+      instanceIntegration?: string 
     ) {
       for (const message of messages) {
         if (message.type === 'text') {
@@ -335,8 +339,12 @@ export class TypebotService {
                 }
               }
             }
-
-            await instance.buttonMessage(buttonJson);
+            if (!instanceIntegration || instanceIntegration === Integration.WHATSAPP_BAILEYS) {
+              const listJson = waMonitor.changeButtonMessageToList(buttonJson);
+              await instance.listMessage(listJson)
+            } else {
+              await instance.buttonMessage(buttonJson);
+            }
           } else {
             await instance.textMessage(
               {
@@ -528,7 +536,12 @@ export class TypebotService {
               }
             }
 
-            await instance.buttonMessage(buttonJson);
+            if (!instanceIntegration || instanceIntegration === Integration.WHATSAPP_BAILEYS) {
+              const listJson = waMonitor.changeButtonMessageToList(buttonJson);
+              await instance.listMessage(listJson)
+            } else {
+              await instance.buttonMessage(buttonJson);
+            }
           } else {
             await instance.textMessage(
               {
