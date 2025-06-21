@@ -52,7 +52,16 @@ function getAvailableNumbers(remoteJid: string) {
 
 interface ISaveOnWhatsappCacheParams {
   remoteJid: string;
+  lid?: string;
 }
+
+/**
+ * Saves or updates WhatsApp number variants and optional LID values in the cache.
+ *
+ * For each entry, normalizes the remote JID, generates possible number variants, and upserts the data into the database. The `lid` property is included if provided.
+ *
+ * @param data - Array of objects containing `remoteJid` and optional `lid` to be cached
+ */
 export async function saveOnWhatsappCache(data: ISaveOnWhatsappCacheParams[]) {
   if (configService.get<Database>('DATABASE').SAVE_DATA.IS_ON_WHATSAPP) {
     const upsertsQuery = data.map((item) => {
@@ -60,8 +69,15 @@ export async function saveOnWhatsappCache(data: ISaveOnWhatsappCacheParams[]) {
       const numbersAvailable = getAvailableNumbers(remoteJid);
 
       return prismaRepository.isOnWhatsapp.upsert({
-        create: { remoteJid: remoteJid, jidOptions: numbersAvailable.join(',') },
-        update: { jidOptions: numbersAvailable.join(',') },
+        create: {
+          remoteJid: remoteJid,
+          jidOptions: numbersAvailable.join(','),
+          lid: item.lid,
+        },
+        update: {
+          jidOptions: numbersAvailable.join(','),
+          lid: item.lid,
+        },
         where: { remoteJid: remoteJid },
       });
     });
@@ -70,11 +86,20 @@ export async function saveOnWhatsappCache(data: ISaveOnWhatsappCacheParams[]) {
   }
 }
 
+/**
+ * Retrieves cached WhatsApp number records for the given JIDs if caching is enabled.
+ *
+ * For each input JID, generates possible number variants and queries the cache for recent records matching any variant. Returns an array of objects containing the original JID, its base number, associated JID options, and an optional `lid` if present.
+ *
+ * @param remoteJids - An array of WhatsApp JIDs to look up in the cache
+ * @returns An array of objects with `remoteJid`, `number`, `jidOptions`, and optional `lid` for each cached entry found
+ */
 export async function getOnWhatsappCache(remoteJids: string[]) {
   let results: {
     remoteJid: string;
     number: string;
     jidOptions: string[];
+    lid?: string;
   }[] = [];
 
   if (configService.get<Database>('DATABASE').SAVE_DATA.IS_ON_WHATSAPP) {
@@ -93,6 +118,7 @@ export async function getOnWhatsappCache(remoteJids: string[]) {
       remoteJid: item.remoteJid,
       number: item.remoteJid.split('@')[0],
       jidOptions: item.jidOptions.split(','),
+      lid: item.lid,
     }));
   }
 

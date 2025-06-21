@@ -1,6 +1,5 @@
 import { InstanceDto } from '@api/dto/instance.dto';
 import {
-  ListSection,
   SendAudioDto,
   SendButtonsDto,
   SendContactDto,
@@ -16,9 +15,22 @@ import {
   SendTextDto,
 } from '@api/dto/sendMessage.dto';
 import { WAMonitoringService } from '@api/services/monitor.service';
-import { Integration } from '@api/types/wa.types';
 import { BadRequestException } from '@exceptions';
 import { isBase64, isURL } from 'class-validator';
+
+/**
+ * Determines whether a string is empty or consists of a single emoji character.
+ *
+ * @param str - The string to validate
+ * @returns `true` if the string is empty or a single emoji; otherwise, `false`
+ */
+function isEmoji(str: string) {
+  if (str === '') return true;
+
+  const emojiRegex =
+    /^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F64F}\u{1F680}-\u{1F6FF}]$/u;
+  return emojiRegex.test(str);
+}
 
 export class SendMessageController {
   constructor(private readonly waMonitor: WAMonitoringService) {}
@@ -66,11 +78,7 @@ export class SendMessageController {
     }
   }
 
-  public async sendButtons({ instanceName, integration }: InstanceDto, data: SendButtonsDto) {
-    if (!integration || integration === Integration.WHATSAPP_BAILEYS) {
-      const sendListData: SendListDto = this.waMonitor.changeButtonMessageToList(data);
-      return this.waMonitor.waInstances[instanceName].listMessage(sendListData);
-    }
+  public async sendButtons({ instanceName }: InstanceDto, data: SendButtonsDto) {
     return await this.waMonitor.waInstances[instanceName].buttonMessage(data);
   }
 
@@ -87,8 +95,8 @@ export class SendMessageController {
   }
 
   public async sendReaction({ instanceName }: InstanceDto, data: SendReactionDto) {
-    if (!data.reaction.match(/[^()\w\sà-ú"-+]+/)) {
-      throw new BadRequestException('"reaction" must be an emoji');
+    if (!isEmoji(data.reaction)) {
+      throw new BadRequestException('Reaction must be a single emoji or empty string');
     }
     return await this.waMonitor.waInstances[instanceName].reactionMessage(data);
   }

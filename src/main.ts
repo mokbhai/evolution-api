@@ -22,6 +22,11 @@ function initWA() {
   waMonitor.loadInstance();
 }
 
+/**
+ * Initializes and configures the Express server application, including middleware, services, error handling, and server startup.
+ *
+ * Sets up CORS, body parsing, compression, static file serving, view engine, and routing. Initializes provider and repository modules as needed. Configures error handling middleware, including optional error reporting to a webhook. Handles fallback to HTTP if SSL certificate loading fails. Integrates Sentry error tracking if configured, starts the server, and initializes WhatsApp monitoring and global error handlers.
+ */
 async function bootstrap() {
   const logger = new Logger('SERVER');
   const app = express();
@@ -128,7 +133,15 @@ async function bootstrap() {
   const httpServer = configService.get<HttpServer>('SERVER');
 
   ServerUP.app = app;
-  const server = ServerUP[httpServer.TYPE];
+  let server = ServerUP[httpServer.TYPE];
+
+  if (server === null) {
+    logger.warn('SSL cert load failed — falling back to HTTP.');
+    logger.info("Ensure 'SSL_CONF_PRIVKEY' and 'SSL_CONF_FULLCHAIN' env vars point to valid certificate files.");
+
+    httpServer.TYPE = 'http';
+    server = ServerUP[httpServer.TYPE];
+  }
 
   eventManager.init(server);
 

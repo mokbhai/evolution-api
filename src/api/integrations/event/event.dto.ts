@@ -26,6 +26,11 @@ export class EventDto {
     events?: string[];
   };
 
+  nats?: {
+    enabled?: boolean;
+    events?: string[];
+  };
+
   pusher?: {
     enabled?: boolean;
     appId?: string;
@@ -37,6 +42,13 @@ export class EventDto {
   };
 }
 
+/**
+ * Creates a mixin that adds optional event transport configuration properties to a base class.
+ *
+ * The returned class includes properties for configuring event delivery via webhook, websocket, SQS, RabbitMQ, NATS, and Pusher, each with their respective options.
+ *
+ * @returns A new class extending the base, augmented with event transport configuration fields
+ */
 export function EventInstanceMixin<TBase extends Constructor>(Base: TBase) {
   return class extends Base {
     webhook?: {
@@ -59,6 +71,11 @@ export function EventInstanceMixin<TBase extends Constructor>(Base: TBase) {
     };
 
     rabbitmq?: {
+      enabled?: boolean;
+      events?: string[];
+    };
+
+    nats?: {
       enabled?: boolean;
       events?: string[];
     };
